@@ -4,32 +4,23 @@
 
 # ToDo: wziac przepisac na argumenty
 
+# ToDo: komunikaty gdy sie nie uda jakiejs operacji wykonac (backup/download/decompress)
+
 
 #= Constant variables =#
 readonly DOWNLOAD_LINK_TEMPLATE="https://files.teamspeak-services.com/releases/server/%VERSION%/teamspeak3-server_linux_amd64-%VERSION%.tar.bz2"
 
 readonly TS3_USER="ts3aod"
-readonly TS3_SERVICE_TSDNS="ts3server"
-readonly TS3_SERVICE_SERVER="tsdns"
-readonly BACKUP_CMD="backup ts3aod"
-
-
-# Verification function.
-function verify() {
-    echo "Verifying..."
-
-    if [[ $# -eq 0 ]]; then
-        echo "Too little arguments!"
-        return -1
-    fi
-    
-}
-
-
-###
+readonly TS3_SERVICE_TSDNS="tsdns"
+readonly TS3_SERVICE_SERVER="ts3server"
+readonly BACKUP_CMD="backup $TS3_USER"
 
 readonly DOWNLOAD_DIR="/tmp/ts3autoupdate/$(date +%s)"
 readonly UPDATE_DIR="${DOWNLOAD_DIR}/update"
+readonly SERVER_DIR="/home/ts3aod"
+
+###
+
 downloadedFile=""
 
 # Download file contents with given URL.
@@ -80,7 +71,7 @@ function decompress() {
             echo "Correct. Moving its contents to the root dir..."
             cp -r $possibleDirectory/* $UPDATE_DIR
             rm -rf $possibleDirectory
-            ls -la $UPDATE_DIR
+            ls $UPDATE_DIR
             echo "Moved!"
         fi
     fi
@@ -90,10 +81,10 @@ function decompress() {
 function preUpdate() {
     echo "Performing preupdate tasks..."
     
-    # Initialize services
+    # Prepare services
     echo "Stopping services..."
-    service $TS3_SERVICE_TSDNS stop
-    service $TS3_SERVICE_SERVER stop
+    sudo service $TS3_SERVICE_TSDNS stop
+    sudo service $TS3_SERVICE_SERVER stop
     echo "Services stopped"
     
     # Perform backup
@@ -102,14 +93,54 @@ function preUpdate() {
     echo "Backup completed!"
 }
 
+# Update the teamspeak 3 server
+function update() {
+	echo "Updating..."
+	sudo cp -r $UPDATE_DIR/* $SERVER_DIR/
+	echo "Update completed!"
+}
+
+# Perform postupdate tasks
+function postUpdate() {
+	# Start the services
+    echo "Starting services..."
+    sudo service $TS3_SERVICE_TSDNS start
+    sudo service $TS3_SERVICE_SERVER start
+    echo "Services started"
+    
+    # Change permissions
+    echo "Changing file permissions..."
+    sudo chown $TS3_USER -R $SERVER_DIR/*
+}
+
+function cleanup() {
+	echo "Performing cleanup..."
+	echo "Removing files..."
+	rm -vr $DOWNLOAD_DIR
+	echo "Cleanup completed!"
+}
+
 
 # Main execution function.
 function run() {
     download $*
     decompress $downloadedFile
     preUpdate
-    
+    update
+    postUpdate
+    cleanup
 }
+
+# Verification function.
+function verify() {
+    echo "Verifying..."
+
+    if [[ $# -eq 0 ]]; then
+        echo "Too little arguments!"
+        return -1
+    fi
+}
+
 
 # Pass all script arguments to the verification function
 #  and decide whether further execution is recommended.
