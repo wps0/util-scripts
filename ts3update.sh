@@ -71,7 +71,6 @@ function decompress() {
             echo "Correct. Moving its contents to the root dir..."
             cp -r $possibleDirectory/* $UPDATE_DIR
             rm -rf $possibleDirectory
-            ls $UPDATE_DIR
             echo "Moved!"
         fi
     fi
@@ -84,12 +83,14 @@ function preUpdate() {
     # Prepare services
     echo "Stopping services..."
     sudo service $TS3_SERVICE_TSDNS stop
+    
     sudo service $TS3_SERVICE_SERVER stop
+    echo $?
     echo "Services stopped"
     
     # Perform backup
     echo "Performing backup..."
-    eval $BACKUP_CMD
+    sudo eval $BACKUP_CMD
     echo "Backup completed!"
 }
 
@@ -117,6 +118,7 @@ function cleanup() {
 	echo "Performing cleanup..."
 	echo "Removing files..."
 	rm -vr $DOWNLOAD_DIR
+	echo $?
 	echo "Cleanup completed!"
 }
 
