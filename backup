@@ -1,0 +1,45 @@
+#!/bin/bash
+logFile="/var/log/autobackup.log"
+exec 1>>$logFile 2>&1
+
+log() {
+	message=$1
+	date=$(date +"%Y:%m:%d %H:%M")
+	echo "[$date]$service: $message"
+}
+quit() {
+	exit
+}
+## input data verification
+#
+if [ -z "$1" ]; then
+	service="global"
+	log "Backup failed! (missing parameters)"
+	quit
+else
+	service=$1
+fi
+
+log "Starting backup..."
+# define config variables
+sDir="/home/$service"
+oDir="/backup/$service"
+
+input="$sDir/*"
+output="$oDir/$service-"$(date +%Y%m%d)"-"$(date +%H%M)".tar.gz"
+## verification v2
+#sDir
+if [ ! -d "$sDir" ]; then
+	log "Directory does not exist! Backup failed"
+	quit
+fi
+#oDir
+if [ ! -d "$oDir" ]; then
+	sudo mkdir -p $oDir
+fi
+##end
+
+tar -czPf $output $input
+chmod 600 $output
+chown root:root $output
+log "Backup made in "$output
