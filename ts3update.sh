@@ -63,7 +63,7 @@ function decompress() {
     
     # Move the possible contents of a single directory inside the extraction result.
     if [[ $(ls -l $UPDATE_DIR | wc -l) -eq 2 ]]; then
-        echo "It's possible that the archive contained a directory. Making sure..."
+        echo "It's possible that the archive contains a directory. Making sure..."
         
         local possibleDirectory=$UPDATE_DIR/$(ls $UPDATE_DIR | tail -1)
         # Move the contents of the possible dir to the UPDATE_DIR
@@ -72,6 +72,8 @@ function decompress() {
             cp -r $possibleDirectory/* $UPDATE_DIR
             rm -rf $possibleDirectory
             echo "Moved!"
+	else
+	    echo "Incorrect. The server files are located in the root dir."
         fi
     fi
 }
@@ -80,18 +82,18 @@ function decompress() {
 function preUpdate() {
     echo "Performing preupdate tasks..."
     
+    # Perform backup
+    echo "Performing backup..."
+    # sudo eval $BACKUP_CMD
+    sudo $BACKUP_CMD
+    echo "Backup completed!"
+    
     # Prepare services
     echo "Stopping services..."
     sudo service $TS3_SERVICE_TSDNS stop
-    
     sudo service $TS3_SERVICE_SERVER stop
     echo $?
     echo "Services stopped"
-    
-    # Perform backup
-    echo "Performing backup..."
-    sudo eval $BACKUP_CMD
-    echo "Backup completed!"
 }
 
 # Update the teamspeak 3 server
@@ -103,7 +105,8 @@ function update() {
 
 # Perform postupdate tasks
 function postUpdate() {
-	# Start the services
+    # why does it work? permission change should probably be at the beginning of the function
+    # Start the services
     echo "Starting services..."
     sudo service $TS3_SERVICE_TSDNS start
     sudo service $TS3_SERVICE_SERVER start
