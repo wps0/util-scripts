@@ -80,8 +80,7 @@ class Source:
 
 class DataStore:
     def __init__(self):
-        # ile rekordow, offset, url
-        self.files = []
+        self.lines = []
         self.line_cnt = 0
 
     def add(self, src: Source):
@@ -91,42 +90,36 @@ class DataStore:
         offset = 1
         with open(src.filepath, "rb") as f:
             for x in f:
+                if offset > 0:
+                    offset -= 1
+                    continue
                 cnt += 1
+                self.lines.append(x)
 
-        self.files.append((cnt, offset, src.filepath))
+
         self.line_cnt += cnt - offset
         print("Added %d lines." % (cnt - offset))
     
     def get_line(self, i: int):
-        ind = 0
-        while i - self.files[ind][0] > 0:
-            i -= self.files[ind][0]
-            ind += 1
-        i += self.files[ind][1]
-        with open(self.files[ind][2], "r") as f:
-            line = ""
-            while i > 0:
-                line = f.readline()
-                i -= 1
-            return line
+        return self.lines[i].decode('utf-8')
 
     def rand(self):
-        return self.get_line(random.randint(0, self.line_cnt))
+        return self.get_line(random.randint(0, self.line_cnt-1))
     
     def __str__(self):
-        return "DataStore(line_cnt=%d,files=%s)" % (self.line_cnt, self.files)
+        return "DataStore(line_cnt=%d)" % (self.line_cnt)
 
 
 class Address:
     def __init__(self, city, prefecture, postcode, country, street, street_nr):
-        self.city = city
-        self.prefecture = prefecture
+        self.city = city.title()
+        self.prefecture = prefecture.lower()
         self.postcode = postcode
-        self.country = country
-        self.address = street + " " + street_nr
+        self.country = country.title()
+        self.address = street.title() + " " + street_nr.upper()
     
     def __str__(self):
-        return self.address + ";" + self.city + ";" + self.prefecture + ";" + self.postcode + ";" + self.country + ";"
+        return self.address + "\";\"" + self.city + "\";\"" + self.prefecture + "\";\"" + self.postcode + "\";\"" + self.country
 
 
 class AddressDataStore(DataStore):
@@ -140,13 +133,13 @@ class AddressDataStore(DataStore):
 class NameDataStore(DataStore):
     def get_line(self, i: int):
         x = super().get_line(i).split(",")
-        return x[0]
+        return x[0].title()
 
 
 class SurnameDataStore(DataStore):
     def get_line(self, i: int):
         x = super().get_line(i).split(",")
-        return x[0]
+        return x[0].title()
 
 
 surname_store = SurnameDataStore()
@@ -175,10 +168,11 @@ def gen_pesel(sex: int):
         s,
     ) 
 
-id_last = 1
+ID_START = 2137000
+id_last = ID_START
 def generate_record():
     global id_last
-    domains = ["@gmail.com", "@wp.pl", "@o2.pl", "@hotmail.com"]
+    domains = ["@gmail.com", "@wp.pl", "@o2.pl", "@hotmail.com", "@protonmail.com"]
 
     rid = id_last
     id_last += 1
@@ -189,12 +183,12 @@ def generate_record():
             surname.encode("ascii", errors="ignore").decode().lower().replace(" ", "-"),
             domains[random.randint(0, 3)])
 
-    return "%d;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s;%d;%s;%s;%s" % (
+    return "%d;\"%s\";\"%s\";%d;%s;%d;\"%s\";\"%s\";\"%s\";\"%s\";%d;\"%s\";\"%s\";%d;\"%s\";\"%s\";\"%s\"" % (
             rid,
-            surname, name, str(random.randint(0, 3000)), str(gen_pesel(sex)),
-            str(random.randint(1000000000, 9999999999)), name_store[1].rand(),
+            surname, name, random.randint(0, 3000), gen_pesel(sex),
+            random.randint(1000000000, 9999999999), name_store[1].rand(),
             name_store[0].rand(), surname_store.rand(), email, 
-            str(random.randint(100000000, 999999999)), str(address_store.rand()),
+            random.randint(100000000, 999999999), str(address_store.rand()),
             "", random.randint(0, 1), "", email[:email.find("@")].replace(".", "-") + ".pl",
             ("Mężczyzna" if sex == 1 else "Kobieta"))
     
@@ -216,4 +210,5 @@ if __name__ == "__main__":
             for j in range(0, int(sys.argv[1])):
                 f.write(generate_record())
                 f.write("\n")
+        id_last = ID_START
     print("OK!")
