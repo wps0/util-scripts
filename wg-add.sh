@@ -88,7 +88,7 @@ read_ip_list() {
         fi
     done
 
-    IP_LIST=$ip
+    IP_LIST=$ips
 }
 
 gen_key_pair() {
@@ -140,4 +140,4 @@ client_config=$(gen_client_config)
 echo "$client_config"
 
 print_section_subheader "Client QR"
-qrencode -t ansiutf8 "$client_config"
+echo "$client_config" | qrencode -t ansiutf8
