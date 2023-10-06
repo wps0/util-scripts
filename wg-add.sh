@@ -46,37 +46,23 @@ print_section_subheader() {
     echo -e "$ANSI_GREEN✓" $ANSI_RESET "$1"
 }
 
-# $1 - IP address string
-# $2 - Subnet mask
-# Returns: 0 if the addr/mask is correct
-is_valid_ip_and_subnet() {
-    if [[ $1 =~ $IP_REGEX ]]; then
-        return $(($2 < 0 || $2 > 32))
-    fi
-    return 1
-}
-
 # Takes no args
 # Returns the selected IP in $IP variable
 read_ip() {
     log_info "To abandon entering the IP, enter -1 as an IP."
     ip=''
-    smask=''
 
-    until $(is_valid_ip_and_subnet $ip $smask); do
+    until [[ $ip =~ $IP_REGEX ]]; do
         read -p "Enter IP: " ip
         if [[ $ip == "-1" ]]; then
             exit
         fi
 
-        read -p "Enter subnet mask: " smask
-
-        is_valid_ip_and_subnet $ip $smask
-        if [[ $? -ne 0 ]]; then
-            log_error "Invalid IP address or subnet mask! Try again or enter -1 to exit.\n"
+        if [[ ! ($ip =~ $IP_REGEX) ]]; then
+            log_error "Invalid IP address! Try again or enter -1 to exit.\n"
         fi
     done
-    INTERFACE_IP=$ip/$smask
+    INTERFACE_IP=$ip/32
 }
 
 read_ip_list() {
@@ -121,7 +107,7 @@ gen_server_config_portion() {
     echo "[Peer]
 PublicKey = $PUB_KEY
 PresharedKey = $PSK_KEY
-AllowedIPs = $IP_LIST
+AllowedIPs = $INTERFACE_IP
 "
 }
 
@@ -129,9 +115,9 @@ echo "~~~~~~~~~~~~~~~~~~~~~~~~"
 echo "  Client configuration  "
 echo "~~~~~~~~~~~~~~~~~~~~~~~~"
 
-print_section_subheader "Interface IP (recommended subnet mask: /32)"
+print_section_subheader "Interface IP"
 read_ip
-print_section_subheader "Allowed IPs (recommended: Interface IP)"
+print_section_subheader "Allowed IPs"
 read_ip_list
 gen_key_pair
 
