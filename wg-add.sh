@@ -1,8 +1,11 @@
 #!/bin/bash
 # CONFIGURABLE VARIABLES
-SERVER_ADDR="192.168.1.1"
-SERVER_PORT=51820
-SERVER_PUBKEY=''
+
+# Set them somewhere, for example in .config.sh
+# SERVER_ADDR="192.168.1.1"
+# SERVER_PORT=51820
+# SERVER_PUBKEY=''
+. .config.sh
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -126,9 +129,9 @@ echo "~~~~~~~~~~~~~~~~~~~~~~~~"
 echo "  Client configuration  "
 echo "~~~~~~~~~~~~~~~~~~~~~~~~"
 
-print_section_subheader "Interface IP"
+print_section_subheader "Interface IP (recommended subnet mask: /32)"
 read_ip
-print_section_subheader "Allowed IPs"
+print_section_subheader "Allowed IPs (recommended: Interface IP)"
 read_ip_list
 gen_key_pair
 
