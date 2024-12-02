@@ -100,6 +100,7 @@ PublicKey = $SERVER_PUBKEY
 PresharedKey = $PSK_KEY
 AllowedIPs = $IP_LIST
 Endpoint = $SERVER_ADDR:$SERVER_PORT
+PersistentKeepalive = 25
 "
 }
 
